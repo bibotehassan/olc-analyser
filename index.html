@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="author" content="Bibote Hassan">
+<meta name="copyright" content="© 2026 Bibote Hassan. All rights reserved.">
+<meta name="description" content="OLC Analyser — Ordinal Letter Curve methodology by Bibote Hassan">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OLC Analyser — Bibote Hassan</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:       #ffffff;
+  --bg2:      #f5f5f5;
+  --bg3:      #eeeeee;
+  --text:     #1a1a1a;
+  --text2:    #555555;
+  --text3:    #888888;
+  --border:   rgba(0,0,0,0.12);
+  --border2:  rgba(0,0,0,0.22);
+  --blue:     #185FA5;
+  --orange:   #C9501A;
+  --green:    #3B6D11;
+  --red:      #A32D2D;
+  --gold:     #854F0B;
+  --radius:   10px;
+  --radius-sm:6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:    #1a1a1a; --bg2: #242424; --bg3: #2e2e2e;
+    --text:  #f0f0f0; --text2: #aaaaaa; --text3: #666666;
+    --border: rgba(255,255,255,0.10); --border2: rgba(255,255,255,0.20);
+  }
+}
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+       background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; }
+.app { max-width: 900px; margin: 0 auto; padding: 20px 16px; }
+
+/* HEADER */
+.header { text-align: center; padding: 24px 0 20px; border-bottom: 0.5px solid var(--border); margin-bottom: 20px; }
+.header h1 { font-size: 20px; font-weight: 600; color: var(--text); letter-spacing: -.3px; }
+.header p  { font-size: 13px; color: var(--text2); margin-top: 4px; }
+
+/* TABS */
+.tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+.tab  { padding: 6px 16px; border: 0.5px solid var(--border2); border-radius: var(--radius-sm);
+        font-size: 13px; background: transparent; color: var(--text2); cursor: pointer; transition: all .15s; }
+.tab:hover { background: var(--bg2); }
+.tab.active { background: var(--bg3); color: var(--text); border-color: var(--border2); font-weight: 500; }
+
+/* CARD */
+.card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius);
+        padding: 16px 18px; margin-bottom: 12px; }
+.card-title { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase;
+              letter-spacing: .07em; margin-bottom: 10px; }
+
+/* METRIC */
+.metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px,1fr)); gap: 10px; margin-bottom: 12px; }
+.metric { background: var(--bg2); border-radius: var(--radius-sm); padding: 10px 12px; }
+.metric .lbl { font-size: 11px; color: var(--text3); margin-bottom: 4px; }
+.metric .val { font-size: 22px; font-weight: 500; }
+.metric .sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+/* FORM */
+textarea, select { width: 100%; border: 0.5px solid var(--border2); border-radius: var(--radius-sm);
+                   background: var(--bg2); color: var(--text); font-size: 13px; padding: 8px 10px;
+                   font-family: inherit; transition: border-color .15s; }
+textarea:focus, select:focus { outline: none; border-color: var(--blue); }
+textarea { resize: vertical; }
+.btn { padding: 8px 16px; border-radius: var(--radius-sm); border: 0.5px solid var(--border2);
+       background: var(--bg2); color: var(--text); font-size: 13px; cursor: pointer;
+       transition: background .15s; font-family: inherit; }
+.btn:hover { background: var(--bg3); }
+.btn-primary { background: var(--blue); color: #fff; border-color: var(--blue); }
+.btn-primary:hover { background: #1450880; opacity: .92; }
+
+/* BADGES */
+.badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+.ok   { background: rgba(59,109,17,.12);  color: #3B6D11; }
+.warn { background: rgba(186,117,23,.12); color: #854F0B; }
+.bad  { background: rgba(163,45,45,.12);  color: #A32D2D; }
+
+/* GRID 2 COL */
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media(max-width:600px){ .g2 { grid-template-columns: 1fr; } }
+
+/* CHART WRAP */
+.chart-wrap { position: relative; height: 200px; }
+.chart-wrap-tall { position: relative; height: 240px; }
+
+/* INTERP */
+.interp { font-size: 12px; color: var(--text2); line-height: 1.7; padding: 12px 14px;
+           background: var(--bg2); border-radius: var(--radius-sm); margin-top: 10px; }
+
+/* FOOTER */
+.footer { text-align: center; font-size: 11px; color: var(--text3); padding: 24px 0 12px;
+          border-top: 0.5px solid var(--border); margin-top: 24px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+<div class="header">
+  <h1>Ordinal Letter Curve Analyser</h1>
+  <p>Based on the research of Bibote Hassan — Stylostatistics / Ordinal Letter Curve methodology</p>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="showMode('analyse')">📊 Analyse</button>
+  <button class="tab" onclick="showMode('comparer')">⚖️ Compare</button>
+  <button class="tab" onclick="showMode('inter')">🌍 Cross-language</button>
+  <button class="tab" onclick="showMode('about')">ℹ️ About</button>
+</div>
+
+<!-- ══ ANALYSE ══════════════════════════════════════════════════════════════ -->
+<div id="mode-analyse">
+  <div class="card">
+    <div class="card-title">Text input</div>
+    <div style="display:grid; grid-template-columns:1fr 160px; gap:10px; align-items:start;">
+      <textarea id="txt-a" rows="5" placeholder="Paste or type your text here… French, Arabic, English…"></textarea>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <select id="lang-a" onchange="analyse()">
+          <option value="fr">🇫🇷 Français</option>
+          <option value="ar">🇸🇦 العربية</option>
+          <option value="en">🇬🇧 English</option>
+          <option value="ru">🇷🇺 Русский</option>
+          <option value="es">🇪🇸 Español</option>
+          <option value="de">🇩🇪 Deutsch</option>
+        </select>
+        <button class="btn btn-primary" onclick="analyse()">Analyse ↗</button>
+        <button class="btn" onclick="loadSample()">Sample text</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="metrics-grid">
+    <div class="metric"><div class="lbl">μ — mean rank</div><div class="val" id="m-mu" style="color:var(--blue)">—</div><div class="sub" id="m-mu-ref">ref: —</div></div>
+    <div class="metric"><div class="lbl">σ — std deviation</div><div class="val" id="m-sigma" style="color:var(--orange)">—</div><div class="sub">dispersion</div></div>
+    <div class="metric"><div class="lbl">H — Shannon</div><div class="val" id="m-H" style="color:var(--green)">—</div><div class="sub">bits</div></div>
+    <div class="metric"><div class="lbl">η — efficiency</div><div class="val" id="m-eta" style="color:var(--gold)">—</div><div class="sub">% acoustic conc.</div></div>
+    <div class="metric"><div class="lbl">P₀ = μ × σ</div><div class="val" id="m-P0" style="color:var(--red)">—</div><div class="sub">uncertainty princ.</div></div>
+    <div class="metric"><div class="lbl">N — letters</div><div class="val" id="m-N">—</div><div class="sub">after cleaning</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Ordinal curve — r(lₙ) vs position n</div>
+    <div class="chart-wrap"><canvas id="c-curve"></canvas></div>
+  </div>
+
+  <div id="interp-a" class="interp" style="display:none;"></div>
+</div>
+
+<!-- ══ COMPARE ══════════════════════════════════════════════════════════════ -->
+<div id="mode-comparer" style="display:none;">
+  <div class="g2" style="margin-bottom:10px;">
+    <div class="card">
+      <div class="card-title">Text A</div>
+      <textarea id="txt-c1" rows="5" placeholder="First text…"></textarea>
+      <select id="lang-c1" style="margin-top:8px;">
+        <option value="fr">🇫🇷 Français</option>
+        <option value="ar">🇸🇦 العربية</option>
+        <option value="en">🇬🇧 English</option>
+        <option value="ru">🇷🇺 Русский</option>
+      </select>
+    </div>
+    <div class="card">
+      <div class="card-title">Text B</div>
+      <textarea id="txt-c2" rows="5" placeholder="Second text…"></textarea>
+      <select id="lang-c2" style="margin-top:8px;">
+        <option value="fr">🇫🇷 Français</option>
+        <option value="ar">🇸🇦 العربية</option>
+        <option value="en">🇬🇧 English</option>
+        <option value="ru">🇷🇺 Русский</option>
+      </select>
+    </div>
+  </div>
+  <button class="btn btn-primary" style="width:100%; margin-bottom:12px;" onclick="comparer()">Compare the two texts ↗</button>
+
+  <div id="cmp-result" style="display:none;">
+    <div class="g2" id="cmp-metrics" style="margin-bottom:12px;"></div>
+    <div class="card">
+      <div class="card-title">Ordinal curves — A (blue) vs B (orange)</div>
+      <div class="chart-wrap"><canvas id="c-cmp"></canvas></div>
+    </div>
+    <div id="cmp-interp" class="interp"></div>
+  </div>
+</div>
+
+<!-- ══ INTER-LANGUES ════════════════════════════════════════════════════════ -->
+<div id="mode-inter" style="display:none;">
+  <div class="card">
+    <div class="card-title">μ (bars) and η % (line) across 10 languages</div>
+    <div class="chart-wrap-tall"><canvas id="c-inter"></canvas></div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">μ vs Shannon H — Law: r = −0.521 (alphabetical)</div>
+      <div class="chart-wrap"><canvas id="c-scatter"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">P₀ = μ × σ per language — quasi-constant (Law 10)</div>
+      <div class="chart-wrap"><canvas id="c-P0"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ABOUT ════════════════════════════════════════════════════════════════ -->
+<div id="mode-about" style="display:none;">
+  <div class="card">
+    <div class="card-title">About this application</div>
+    <p style="margin-bottom:12px; line-height:1.7;">This tool implements the <strong>Ordinal Letter Curve (OLC)</strong> methodology developed by Bibote Hassan, an independent researcher in quantitative linguistics.</p>
+    <table style="width:100%; font-size:13px; border-collapse:collapse;">
+      <thead><tr style="border-bottom:0.5px solid var(--border);">
+        <th style="text-align:left; padding:6px 8px; color:var(--text3); font-weight:500;">Formula</th>
+        <th style="text-align:left; padding:6px 8px; color:var(--text3); font-weight:500;">Expression</th>
+        <th style="text-align:left; padding:6px 8px; color:var(--text3); font-weight:500;">Origin</th>
+      </tr></thead>
+      <tbody id="formula-table"></tbody>
+    </table>
+  </div>
+  <div class="card">
+    <div class="card-title">Key empirical results</div>
+    <ul style="font-size:13px; line-height:2; padding-left:18px; color:var(--text2);">
+      <li>μ invariance confirmed for <strong>9/10 languages</strong> (CV &lt; 7%)</li>
+      <li>μ–H correlation: <strong>r = −0.521</strong> (alphabetical) vs <strong>r = −0.054</strong> (IPA)</li>
+      <li>P₀ = μ × σ ≈ constant across typologically diverse languages</li>
+      <li>Diachronic stability: Δμ ≈ −1.86% over 450 years of French literature</li>
+      <li>Quran η ≈ 20.1% vs Classical Arabic η ≈ 17.5%</li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="card-title">Contact & attribution</div>
+    <p style="font-size:13px; color:var(--text2); line-height:1.7;">
+      All original formulas (★) are the intellectual property of <strong>Bibote Hassan</strong>.<br>
+      Any academic use must cite the author explicitly.<br>
+      Contact: <a href="mailto:bibotehassan@gmail.com" style="color:var(--blue);">bibotehassan@gmail.com</a>
+    </p>
+  </div>
+</div>
+
+<div class="footer">
+  <strong>© 2026 Bibote Hassan</strong> — All rights reserved.<br>
+  Ordinal Letter Curve (OLC) methodology &amp; OLC Analyser application.<br>
+  All original formulas (★) are the intellectual property of Bibote Hassan.<br>
+  Any institutional or commercial use requires a signed licence agreement.<br>
+  Submitted to <em>Glottometrics</em> · <a href="mailto:bibotehassan@gmail.com" style="color:inherit;">bibotehassan@gmail.com</a><br>
+  <span style="font-size:10px; opacity:0.7;">Deposited with INPI Soleau · 17 May 2026 · SHA-256 fingerprint embedded</span>
+</div>
+
+</div><!-- .app -->
+
+<script>
+const ALPHA = {
+  fr:'abcdefghijklmnopqrstuvwxyz',
+  en:'abcdefghijklmnopqrstuvwxyz',
+  es:'abcdefghijklmnopqrstuvwxyz',
+  de:'abcdefghijklmnopqrstuvwxyz',
+  ar:'العلم نور يضيء به العقل والفكر ويرفع مكانة الإنسان بين الأمم والشعوب ويجعل منه إنساناً صالحاً ومتحضراً',
+  ru:'Наука освещает разум и мысль человека и поднимает его среди народов мира',
+};
+const MU_REF  = {fr:12.14,en:13.5,ar:10.71,ru:17.0,es:11.8,de:12.9};
+const SAMPLES = {
+  fr:'La philosophie est le chemin vers la sagesse et la connaissance universelle des choses.',
+  ar:'\u0627\u0644\u0639\u0644\u0645 \u0646\u0648\u0631 \u064a\u0636\u064a\u0621 \u0628\u0647 \u0627\u0644\u0639\u0642\u0644 \u0648\u0627\u0644\u0641\u0643\u0631 \u0648\u064a\u0631\u0641\u0639 \u0645\u0643\u0627\u0646\u0629 \u0627\u0644\u0625\u0646\u0633\u0627\u0646 \u0628\u064a\u0646 \u0627\u0644\u0623\u0645\u0645',
+  en:'The pursuit of knowledge and wisdom is the foundation of all scientific and philosophical progress.',
+};
+const FORMULAS=[
+  ['μ — mean rank','μ = (1/N) × Σ r(lᵢ)','★ Bibote Hassan'],
+  ['σ — std deviation','σ = √[(1/N)×Σ(r−μ)²]','★ Bibote Hassan'],
+  ['H — Shannon entropy','H = −Σ p(i)×log₂p(i)','◆ Shannon 1948'],
+  ['η — efficiency','η = 1 − H/H_max','★ Bibote Hassan'],
+  ['P₀ — uncertainty','P₀ = μ × σ ≈ const','★ Bibote Hassan'],
+  ['RMSE — stylistic','√[(1/N)×Σ(r−ū)²]','★ Bibote Hassan'],
+  ['Δ — written/spoken','Δ = μ_oral − μ_written','★ Bibote Hassan'],
+  ['E(L) — efficacy','E(L) = η×100 / P₀(IPA)','★ Bibote Hassan'],
+];
+
+function cleanText(txt,lang){
+  const alpha=ALPHA[lang]||ALPHA.fr;
+  return txt.toLowerCase().split('').filter(c=>alpha.includes(c));
+}
+function calcM(txt,lang){
+  const letters=cleanText(txt,lang); const N=letters.length;
+  if(N<1) return null;
+  const alpha=ALPHA[lang]||ALPHA.fr;
+  const ranks=letters.map(c=>alpha.indexOf(c)+1);
+  const mu=ranks.reduce((a,b)=>a+b,0)/N;
+  const sigma=Math.sqrt(ranks.reduce((a,r)=>a+(r-mu)**2,0)/N);
+  const freq={};
+  letters.forEach(c=>freq[c]=(freq[c]||0)+1);
+  const H=-Object.values(freq).reduce((a,f)=>{const p=f/N;return a+p*Math.log2(p);},0);
+  const Hmax=Math.log2(alpha.length);
+  const eta=(1-H/Hmax)*100;
+  const P0=mu*sigma;
+  return {N,mu,sigma,H,Hmax,eta,P0,ranks,letters,lang};
+}
+
+let charts={};
+function destroyChart(k){if(charts[k]){try{charts[k].destroy();}catch(e){}delete charts[k];}}
+
+function analyse(){
+  const txt=document.getElementById('txt-a').value;
+  const lang=document.getElementById('lang-a').value;
+  if(!txt.trim()) return;
+  const m=calcM(txt,lang);
+  if(!m){ document.getElementById('interp-a').style.display='block'; document.getElementById('interp-a').innerHTML='<span style="color:var(--red)">No letters recognised — please check the selected language.</span>'; return; }
+
+  document.getElementById('m-mu').textContent    = m.mu.toFixed(2);
+  document.getElementById('m-mu-ref').textContent= 'ref: '+(MU_REF[lang]||'—');
+  document.getElementById('m-sigma').textContent = m.sigma.toFixed(2);
+  document.getElementById('m-H').textContent     = m.H.toFixed(3)+' bits';
+  document.getElementById('m-eta').textContent   = m.eta.toFixed(1)+'%';
+  document.getElementById('m-P0').textContent    = m.P0.toFixed(1);
+  document.getElementById('m-N').textContent     = m.N;
+
+  const ref=MU_REF[lang]||12; const cv=Math.abs(m.mu-ref)/ref*100;
+  const bdg=cv<7?'<span class="badge ok">Invariance confirmed ✓</span>':cv<15?'<span class="badge warn">Moderate deviation</span>':'<span class="badge bad">Outside invariance</span>';
+  const interp=document.getElementById('interp-a');
+  interp.style.display='block';
+  interp.innerHTML=`<strong>OLC Interpretation:</strong> μ = ${m.mu.toFixed(2)} (language reference: ${ref}) — deviation ${cv.toFixed(1)}% ${bdg}<br>
+σ = ${m.sigma.toFixed(2)} → P₀ = ${m.P0.toFixed(1)} (expected ≈ ${(ref*6.6).toFixed(0)})<br>
+η = ${m.eta.toFixed(1)}% — the text concentrates its distribution; ${(100-m.eta).toFixed(1)}% of maximum entropy used.`;
+
+  destroyChart('curve');
+  const WIN=Math.max(5,Math.floor(m.N/30));
+  const ma=[];
+  for(let i=WIN-1;i<m.ranks.length;i++) ma.push(m.ranks.slice(i-WIN+1,i+1).reduce((a,b)=>a+b,0)/WIN);
+  charts['curve']=new Chart(document.getElementById('c-curve').getContext('2d'),{
+    type:'line',data:{labels:ma.map((_,i)=>i+WIN),datasets:[
+      {data:ma,borderColor:'#185FA5',borderWidth:2,pointRadius:0,tension:0.3,fill:true,backgroundColor:'rgba(24,95,165,0.07)',label:'OLC curve'},
+      {data:Array(ma.length).fill(m.mu),borderColor:'#A32D2D',borderWidth:1.5,borderDash:[5,3],pointRadius:0,fill:false,label:'μ = '+m.mu.toFixed(2)},
+    ]},options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:true,labels:{font:{size:10},boxWidth:12}}},
+      scales:{y:{title:{display:true,text:'Ordinal rank',color:'#888',font:{size:10}},grid:{color:'rgba(128,128,128,0.1)'}},
+              x:{title:{display:true,text:'Letter position n',color:'#888',font:{size:10}},grid:{display:false},ticks:{maxTicksLimit:8}}}}
+  });
+}
+
+function loadSample(){
+  const lang=document.getElementById('lang-a').value;
+  document.getElementById('txt-a').value=SAMPLES[lang]||SAMPLES.en;
+  analyse();
+}
+
+// Indicateur de langue détectée sous le textarea
+function showLangIndicator(lang){
+  const names={fr:'🇫🇷 Français',ar:'🇸🇦 العربية',en:'🇬🇧 English',ru:'🇷🇺 Русский',es:'🇪🇸 Español',de:'🇩🇪 Deutsch'};
+  let ind = document.getElementById('lang-indicator');
+  if(!ind){
+    ind = document.createElement('div');
+    ind.id = 'lang-indicator';
+    ind.style.cssText='font-size:11px;color:var(--text3);margin-top:4px;transition:opacity .2s;';
+    document.getElementById('txt-a').parentNode.appendChild(ind);
+  }
+  ind.textContent = 'Detected: ' + (names[lang]||lang);
+}
+
+function comparer(){
+  const t1=document.getElementById('txt-c1').value, l1=document.getElementById('lang-c1').value;
+  const t2=document.getElementById('txt-c2').value, l2=document.getElementById('lang-c2').value;
+  if(!t1.trim()||!t2.trim()){alert('Please enter both texts.');return;}
+  const m1=calcM(t1,l1), m2=calcM(t2,l2);
+  if(!m1||!m2){alert('Texts too short.');return;}
+  document.getElementById('cmp-result').style.display='block';
+
+  const rows=[['μ',m1.mu.toFixed(2),m2.mu.toFixed(2)],['σ',m1.sigma.toFixed(2),m2.sigma.toFixed(2)],
+    ['H (bits)',m1.H.toFixed(3),m2.H.toFixed(3)],['η %',m1.eta.toFixed(1)+'%',m2.eta.toFixed(1)+'%'],
+    ['P₀',m1.P0.toFixed(1),m2.P0.toFixed(1)],['N',m1.N,m2.N]];
+  const cols=['#185FA5','#C9501A'];
+  document.getElementById('cmp-metrics').innerHTML=[['Text A',l1,m1],['Text B',l2,m2]].map(([lbl,lang,m],ti)=>`
+    <div class="card"><div class="card-title">${lbl} (${lang})</div>
+    ${rows.map(([k,v1,v2])=>`<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:0.5px solid var(--border);">
+      <span style="color:var(--text3)">${k}</span><strong style="color:${cols[ti]}">${ti===0?v1:v2}</strong></div>`).join('')}
+    </div>`).join('');
+
+  destroyChart('cmp');
+  const W1=Math.max(5,Math.floor(m1.N/20)), W2=Math.max(5,Math.floor(m2.N/20));
+  const ma1=[],ma2=[];
+  for(let i=W1-1;i<m1.ranks.length;i++) ma1.push(m1.ranks.slice(i-W1+1,i+1).reduce((a,b)=>a+b,0)/W1);
+  for(let i=W2-1;i<m2.ranks.length;i++) ma2.push(m2.ranks.slice(i-W2+1,i+1).reduce((a,b)=>a+b,0)/W2);
+  charts['cmp']=new Chart(document.getElementById('c-cmp').getContext('2d'),{
+    type:'line',data:{labels:Array.from({length:Math.max(ma1.length,ma2.length)},(_,i)=>i+1),datasets:[
+      {data:ma1,borderColor:'#185FA5',borderWidth:2,pointRadius:0,tension:0.3,fill:false,label:`A: μ=${m1.mu.toFixed(2)}`},
+      {data:ma2,borderColor:'#C9501A',borderWidth:2,pointRadius:0,tension:0.3,fill:false,label:`B: μ=${m2.mu.toFixed(2)}`,borderDash:[5,3]},
+    ]},options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:true,labels:{font:{size:10},boxWidth:12}}},
+      scales:{y:{grid:{color:'rgba(128,128,128,0.1)'}},x:{grid:{display:false},ticks:{maxTicksLimit:8}}}}
+  });
+
+  const L=Math.min(ma1.length,ma2.length);
+  const rmse=L>0?Math.sqrt(ma1.slice(0,L).reduce((a,v,i)=>a+(v-ma2[i])**2,0)/L):0;
+  document.getElementById('cmp-interp').innerHTML=
+    `<strong>RMSE between the two curves:</strong> ${rmse.toFixed(3)} &nbsp;|&nbsp; Δμ = ${Math.abs(m1.mu-m2.mu).toFixed(3)} ranks &nbsp;|&nbsp; Δη = ${Math.abs(m1.eta-m2.eta).toFixed(2)}%<br>
+     ${rmse<1?'<span class="badge ok">Stylistically close texts</span>':rmse<3?'<span class="badge warn">Moderate divergence</span>':'<span class="badge bad">Distinct ordinal profiles</span>'}`;
+}
+
+const L10=['French','Arabic','English','Russian','Spanish','German','Greek','Hebrew','Chinese','Japanese'];
+const MU10=[12.14,10.71,13.5,17.0,11.8,12.9,11.5,10.2,7.8,9.4];
+const SG10=[6.50,6.80,6.20,7.20,6.30,6.60,6.10,6.40,3.80,4.20];
+const H10 =[3.92,3.75,3.98,4.35,3.88,3.95,3.81,3.70,2.95,3.40];
+const HM10=[Math.log2(26),Math.log2(28),Math.log2(26),Math.log2(33),Math.log2(26),Math.log2(26),Math.log2(24),Math.log2(22),Math.log2(18),Math.log2(46)];
+const ET10=H10.map((h,i)=>(1-h/HM10[i])*100);
+const P010=MU10.map((m,i)=>m*SG10[i]);
+const CL10=['#185FA5','#C9501A','#2E8B4F','#7B3F9E','#C9A93C','#006B6B','#8B6914','#1A7A4A','#CC3333','#4455AA'];
+
+function buildInterCharts(){
+  if(charts['inter']) return;
+  charts['inter']=new Chart(document.getElementById('c-inter').getContext('2d'),{
+    type:'bar',data:{labels:L10,datasets:[
+      {label:'μ (mean rank)',data:MU10,backgroundColor:CL10.map(c=>c+'CC'),borderRadius:4,borderSkipped:false,yAxisID:'y'},
+      {label:'η (%)',data:ET10.map(v=>parseFloat(v.toFixed(1))),type:'line',borderColor:'#A32D2D',
+       borderWidth:2,pointRadius:5,pointBackgroundColor:CL10,fill:false,yAxisID:'y2'},
+    ]},options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:true,labels:{font:{size:10},boxWidth:12}}},
+      scales:{y:{title:{display:true,text:'μ',color:'#888',font:{size:10}},grid:{color:'rgba(128,128,128,0.1)'}},
+              y2:{title:{display:true,text:'η (%)',color:'#A32D2D',font:{size:10}},position:'right',grid:{display:false}}}}
+  });
+  charts['scatter']=new Chart(document.getElementById('c-scatter').getContext('2d'),{
+    type:'scatter',data:{datasets:[{data:MU10.map((m,i)=>({x:m,y:H10[i]})),
+      backgroundColor:CL10,pointRadius:8,pointHoverRadius:11}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${L10[c.dataIndex]}: μ=${MU10[c.dataIndex]}, H=${H10[c.dataIndex]}`}}},
+      scales:{x:{title:{display:true,text:'μ',color:'#888',font:{size:10}},grid:{color:'rgba(128,128,128,0.1)'}},
+              y:{title:{display:true,text:'H (bits)',color:'#888',font:{size:10}},grid:{color:'rgba(128,128,128,0.1)'}}}}
+  });
+  charts['P0bar']=new Chart(document.getElementById('c-P0').getContext('2d'),{
+    type:'bar',data:{labels:L10,datasets:[
+      {data:P010.map(v=>parseFloat(v.toFixed(1))),backgroundColor:CL10.map(c=>c+'CC'),borderRadius:4,borderSkipped:false},
+      {type:'line',data:Array(10).fill(parseFloat((P010.reduce((a,b)=>a+b,0)/10).toFixed(1))),
+       borderColor:'#000',borderWidth:1.5,borderDash:[4,3],pointRadius:0,fill:false,label:'Mean P₀'},
+    ]},options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:true,labels:{font:{size:10},boxWidth:10}}},
+      scales:{y:{grid:{color:'rgba(128,128,128,0.1)'}},x:{ticks:{font:{size:9},maxRotation:35},grid:{display:false}}}}
+  });
+}
+
+function buildAbout(){
+  const tb=document.getElementById('formula-table');
+  if(tb.innerHTML) return;
+  tb.innerHTML=FORMULAS.map(([n,e,o],i)=>`
+    <tr style="border-bottom:0.5px solid var(--border); background:${i%2?'var(--bg2)':''}">
+      <td style="padding:6px 8px; font-weight:500; font-size:12px;">${n}</td>
+      <td style="padding:6px 8px; font-style:italic; font-size:12px; color:var(--blue);">${e}</td>
+      <td style="padding:6px 8px; font-size:11px; color:var(--text3);">${o}</td>
+    </tr>`).join('');
+}
+
+function showMode(m){
+  ['analyse','comparer','inter','about'].forEach(x=>{
+    document.getElementById('mode-'+x).style.display=x===m?'block':'none';
+  });
+  document.querySelectorAll('.tab').forEach((b,i)=>{
+    b.classList.toggle('active',['analyse','comparer','inter','about'][i]===m);
+  });
+  if(m==='inter') setTimeout(buildInterCharts,50);
+  if(m==='about') buildAbout();
+}
+
+document.getElementById('txt-a').addEventListener('input',()=>{
+  const txt = document.getElementById('txt-a').value;
+  if(txt.length < 2) return;
+
+  // Auto-détection de langue
+  const arabic = (txt.match(/[؀-ۿ]/g)||[]).length;
+  const cyril  = (txt.match(/[Ѐ-ӿ]/g)||[]).length;
+  const latin  = (txt.match(/[a-zA-Z]/g)||[]).length;
+  const total  = Math.max(arabic + cyril + latin, 1);
+  const sel    = document.getElementById('lang-a');
+
+  if(arabic / total > 0.35)     sel.value = 'ar';
+  else if(cyril / total > 0.35) sel.value = 'ru';
+  else if(latin / total > 0.2) {
+    const accents = (txt.match(/[éèêëàâùûîïôçœæÉÈÊËÀÂÙÛÎÏÔÇŒÆ]/g)||[]).length;
+    const eszett  = (txt.match(/[äöüßÄÖÜ]/g)||[]).length;
+    if(eszett > 1)       sel.value = 'de';
+    else if(accents > 1) sel.value = 'fr';
+    else                 sel.value = 'en';
+  }
+
+  showLangIndicator(sel.value);
+  analyse();
+});
+</script>
+</body>
+</html>
